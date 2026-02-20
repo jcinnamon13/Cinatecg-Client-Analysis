@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type SetAllCookies } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -17,10 +17,14 @@ export async function GET(request: NextRequest) {
                     getAll() {
                         return cookieStore.getAll();
                     },
-                    setAll(cookiesToSet) {
-                        cookiesToSet.forEach(({ name, value, options }) => {
-                            cookieStore.set(name, value, options);
-                        });
+                    setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) => {
+                                cookieStore.set(name, value, options);
+                            });
+                        } catch {
+                            // Called from a Server Component — cookies are read-only, ignore
+                        }
                     },
                 },
             }
