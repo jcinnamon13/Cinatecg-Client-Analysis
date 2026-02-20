@@ -1,0 +1,22 @@
+{
+    "framework": "nextjs",
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install",
+    "functions": {
+        "app/api/documents/[id]/analyse/route.ts": {
+            "maxDuration": 60
+        }
+    },
+    "headers": [
+        {
+            "source": "/shared/(.*)",
+            "headers": [
+                {
+                    "key": "X-Robots-Tag",
+                    "value": "noindex"
+                }
+            ]
+        }
+    ]
+}
