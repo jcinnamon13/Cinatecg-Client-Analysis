@@ -25,19 +25,31 @@ export async function middleware(request: NextRequest) {
         }
     );
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
     const { pathname } = request.nextUrl;
 
     // Public routes — no auth required
-    const publicRoutes = ['/login', '/register', '/share'];
+    const publicRoutes = ['/login', '/register', '/share', '/shared'];
     const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
 
     // API routes — handle auth server-side
     if (pathname.startsWith('/api')) {
         return supabaseResponse;
+    }
+
+    // Attempt to get the user with a hard timeout so the Edge function
+    // never hangs long enough for Vercel to issue a 504.
+    let user = null;
+    try {
+        const result = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('auth timeout')), 1200)
+            ),
+        ]);
+        user = (result as Awaited<ReturnType<typeof supabase.auth.getUser>>).data.user;
+    } catch {
+        // Supabase unreachable or timed out — treat as unauthenticated.
+        // Public pages will load normally; protected pages redirect to login.
     }
 
     // Redirect to login if accessing protected route without session
